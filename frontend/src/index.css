@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #137fec;
+  --color-background-light: #f6f7f8;
+  --color-background-dark: #101922;
+
+  --font-display: "Space Grotesk", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-background-light text-slate-900 antialiased selection:bg-primary/20 selection:text-primary dark:bg-background-dark dark:text-slate-100;
+    font-family: var(--font-display);
+  }
+}
