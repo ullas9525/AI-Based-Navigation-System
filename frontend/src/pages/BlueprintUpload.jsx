@@ -177,7 +177,7 @@ const BlueprintUpload = () => {
 
                   {/* Visual Feedback (Mini Preview) */}
                   <div className="flex flex-col gap-3">
-                    <div className="relative w-full aspect-video lg:aspect-square bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-[#3b4754] flex items-center justify-center">
+                    <div className="relative w-full aspect-video lg:aspect-square bg-slate-100 dark:bg-[#1a222c] rounded-xl overflow-hidden border border-slate-200 dark:border-[#3b4754] flex items-center justify-center">
                       {processing && (
                         <>
                           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(#3b4754 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
@@ -185,8 +185,24 @@ const BlueprintUpload = () => {
                           <div className="absolute top-0 left-0 w-full h-1 bg-primary/50 shadow-[0_0_15px_rgba(19,127,236,0.8)] animate-pulse"></div>
                         </>
                       )}
-                      {!processing && processStatus && (
-                        <span className="material-symbols-outlined text-green-500 text-6xl">map</span>
+                      {!processing && processStatus && processStatus.qr_code_url && (
+                        <div className="flex flex-col items-center gap-4 p-4 h-full w-full justify-center">
+                          <img
+                            src={`http://localhost:5000${processStatus.qr_code_url}`}
+                            alt="Navigation QR Code"
+                            className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 w-full max-w-[200px] h-auto object-contain"
+                          />
+                          <a
+                            href={`http://localhost:5000${processStatus.qr_code_url}`}
+                            download={`Navigation_QR_${processStatus.building.replace(/\s+/g, '_')}.png`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition shadow-md shadow-primary/20"
+                          >
+                            <span className="material-symbols-outlined text-lg">download</span>
+                            Download QR
+                          </a>
+                        </div>
                       )}
                     </div>
                   </div>

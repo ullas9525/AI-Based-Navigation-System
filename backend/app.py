@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 
@@ -22,6 +22,10 @@ def create_app():
     @app.route('/health', methods=['GET'])
     def health_check():
         return jsonify({"status": "healthy", "service": "AI Navigation Backend"}), 200
+
+    @app.route('/uploads/<filename>')
+    def serve_upload(filename):
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
     return app
 
