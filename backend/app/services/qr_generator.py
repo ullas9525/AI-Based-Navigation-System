@@ -9,8 +9,8 @@ def generate_qr(building_name, building_id):
     Saves the QR image to the uploads folder.
     """
     # URL visitors hit when they scan the QR code.
-    # 'start=Entrance' pre-fills the start node on the IndoorNavigation page.
-    url = f"http://localhost:5173/visitor/navigate/{building_id}?start=Entrance"
+    # 'startNode=entrance' pre-fills the start node on the IndoorNavigation page.
+    url = f"http://localhost:5173/visitor/navigate/{building_id}?startNode=entrance"
 
     qr = qrcode.QRCode(
         version=1,

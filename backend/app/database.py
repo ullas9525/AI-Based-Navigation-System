@@ -32,10 +32,20 @@ def init_db():
             label TEXT,
             x_coord INTEGER,
             y_coord INTEGER,
+            latitude REAL,
+            longitude REAL,
             type TEXT,
             FOREIGN KEY(building_id) REFERENCES buildings(id)
         )
     ''')
+    
+    # Safely migrate existing databases
+    try:
+        conn.execute('ALTER TABLE nodes ADD COLUMN latitude REAL')
+        conn.execute('ALTER TABLE nodes ADD COLUMN longitude REAL')
+    except sqlite3.OperationalError:
+        pass # Columns already exist
+        
     conn.execute('''
         CREATE TABLE IF NOT EXISTS edges (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

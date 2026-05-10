@@ -86,3 +86,36 @@
 
 ### Git Commit Message:
 `feat: complete core navigation engine — AI spatial mapping, Dijkstra routing, live blueprint SVG, QR deep-link`
+
+---
+
+## [2026-05-10] — Georeferencing Persistence & Routing Refinement
+
+### Requested:
+- Persist computed Lat/Long coordinates directly in the database for each node.
+- Update the QR URL parameters to `?startNode=entrance`.
+- Adjust frontend and backend to use these persisted geographic coordinates instead of on-the-fly calculation.
+
+### Implemented:
+
+**1. Database Schema Evolution (`database.py`)**
+- Added `latitude` and `longitude` to the `nodes` table schema.
+- Added `ALTER TABLE` safe migration logic to handle existing databases.
+
+**2. API Modifications (`blueprints.py`, `navigation.py`)**
+- Pre-computed Coordinates on Upload: AI node pixel coordinates are now piped through `pixel_to_latlong` immediately, and global GPS coordinates are stored permanently in the DB.
+- Streamlined Routing Endpoint: `calculate_route` now fetches the path sequence via Dijkstra and reads the associated `lat` and `lng` directly from the database row, skipping on-the-fly math.
+
+**3. QR Code & Frontend Integration (`qr_generator.py`, `IndoorNavigation.jsx`)**
+- Updated QR URL param from `?start=Entrance` to `?startNode=entrance`.
+- Updated `IndoorNavigation.jsx` to parse the exact `startNode` parameter for seamless routing.
+
+### Files Modified:
+- `backend/app/database.py` [MODIFIED]
+- `backend/app/api/blueprints.py` [MODIFIED]
+- `backend/app/services/qr_generator.py` [MODIFIED]
+- `backend/app/api/navigation.py` [MODIFIED]
+- `frontend/src/pages/IndoorNavigation.jsx` [MODIFIED]
+
+### Git Commit Message:
+`refactor: persist node coordinates in db and streamline georeferencing flow`

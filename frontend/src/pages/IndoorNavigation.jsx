@@ -9,8 +9,8 @@ const IndoorNavigation = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Pre-fill start from QR scan (?start=Entrance) or default
-  const startLocParam = searchParams.get('start') || searchParams.get('loc') || 'Entrance';
+  // Pre-fill start from QR scan (?startNode=entrance) or default
+  const startLocParam = searchParams.get('startNode') || searchParams.get('loc') || 'Entrance';
 
   const [startLoc, setStartLoc]           = useState(startLocParam);
   const [endLoc, setEndLoc]               = useState('');

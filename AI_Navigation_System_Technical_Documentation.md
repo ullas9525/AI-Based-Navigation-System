@@ -228,6 +228,8 @@ A building administrator uploads an architectural blueprint image. Google Gemini
 | label       | TEXT    | Human-readable name (e.g. "Room 101")           |
 | x_coord     | INTEGER | Horizontal position 0–1000                      |
 | y_coord     | INTEGER | Vertical position 0–1000                        |
+| latitude    | REAL    | Computed real-world global latitude             |
+| longitude   | REAL    | Computed real-world global longitude            |
 | type        | TEXT    | room / hallway / entrance / stairs / elevator   |
 
 ### `edges`

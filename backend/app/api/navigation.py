@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.database import get_db_connection
 from app.services.pathfinding import calculate_shortest_path
-from app.services.geo_transform import pixel_to_latlong
 
 navigation_bp = Blueprint('navigation', __name__)
 
@@ -14,7 +13,7 @@ navigation_bp = Blueprint('navigation', __name__)
 def get_nodes(building_id):
     conn = get_db_connection()
     rows = conn.execute(
-        'SELECT node_key, label, x_coord, y_coord, type FROM nodes WHERE building_id = ?',
+        'SELECT node_key, label, x_coord, y_coord, latitude, longitude, type FROM nodes WHERE building_id = ?',
         (building_id,)
     ).fetchall()
     conn.close()
@@ -25,6 +24,8 @@ def get_nodes(building_id):
             "label": row["label"],
             "x":     row["x_coord"],
             "y":     row["y_coord"],
+            "lat":   row["latitude"],
+            "lng":   row["longitude"],
             "type":  row["type"]
         }
         for row in rows
@@ -42,7 +43,7 @@ def get_nodes(building_id):
 #   2. Build node lookup map  {node_key -> node_dict}
 #   3. Resolve start/end: accepts node_key OR label (case-insensitive)
 #   4. Call NetworkX Dijkstra via pathfinding.calculate_shortest_path()
-#   5. For each node in path, retrieve (x, y) + convert to Lat/Long
+#   5. For each node in path, retrieve (x, y, lat, lng)
 #   6. Return ordered coordinate list + total_cost
 # ---------------------------------------------------------------------------
 @navigation_bp.route('/route', methods=['POST'])
@@ -60,14 +61,9 @@ def calculate_route():
 
     conn = get_db_connection()
 
-    # Fetch building for Lat/Long geo-transform
-    building = conn.execute(
-        'SELECT latitude, longitude FROM buildings WHERE id = ?', (building_id,)
-    ).fetchone()
-
-    # Fetch nodes
+    # Fetch nodes with pre-computed Lat/Long
     node_rows = conn.execute(
-        'SELECT node_key, label, x_coord, y_coord, type FROM nodes WHERE building_id = ?',
+        'SELECT node_key, label, x_coord, y_coord, latitude, longitude, type FROM nodes WHERE building_id = ?',
         (building_id,)
     ).fetchall()
 
@@ -95,6 +91,8 @@ def calculate_route():
             "label": row["label"],
             "x":     row["x_coord"],
             "y":     row["y_coord"],
+            "lat":   row["latitude"],
+            "lng":   row["longitude"],
             "type":  row["type"]
         }
         node_map[row["node_key"]] = n
@@ -130,22 +128,18 @@ def calculate_route():
     if not path_keys:
         return jsonify({"success": False, "error": "No path found between these nodes"}), 200
 
-    # Build enriched coordinate list for the frontend
-    bld_lat = building["latitude"]  if building else None
-    bld_lng = building["longitude"] if building else None
-
+    # Build enriched coordinate list for the frontend using stored lat/lng
     path_coords = []
     for key in path_keys:
         node = node_map[key]
-        lat, lng = pixel_to_latlong(node["x"], node["y"], bld_lat, bld_lng)
         path_coords.append({
             "node_id": key,
             "label":   node["label"],
             "type":    node["type"],
             "x":       node["x"],
             "y":       node["y"],
-            "lat":     lat,
-            "lng":     lng
+            "lat":     node["lat"],
+            "lng":     node["lng"]
         })
 
     # Compute total edge cost for the path

@@ -75,16 +75,23 @@ def upload_blueprint():
     building_id = cursor.lastrowid
 
     # --- Persist NODES ---
+    from app.services.geo_transform import pixel_to_latlong
     for node in nodes:
+        node_x = int(node.get('x', 500))
+        node_y = int(node.get('y', 500))
+        node_lat, node_lng = pixel_to_latlong(node_x, node_y, latitude, longitude)
+        
         cursor.execute(
-            '''INSERT INTO nodes (building_id, node_key, label, x_coord, y_coord, type)
-               VALUES (?, ?, ?, ?, ?, ?)''',
+            '''INSERT INTO nodes (building_id, node_key, label, x_coord, y_coord, latitude, longitude, type)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
             (
                 building_id,
                 node.get('id', ''),
                 node.get('label', ''),
-                int(node.get('x', 500)),
-                int(node.get('y', 500)),
+                node_x,
+                node_y,
+                node_lat,
+                node_lng,
                 node.get('type', 'room')
             )
         )
