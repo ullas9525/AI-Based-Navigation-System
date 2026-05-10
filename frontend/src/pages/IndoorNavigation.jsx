@@ -57,13 +57,21 @@ const IndoorNavigation = () => {
           setBlueprintUrl(`${BASE_URL}${building.blueprint_url}`);
         }
 
-        // Pre-set end to the first non-entrance node if nothing chosen yet
-        if (!endLoc && building.nodes && building.nodes.length > 0) {
-          const firstDest = building.nodes.find(
-            n => n.type !== 'entrance' && n.type !== 'hallway'
-          ) || building.nodes[0];
-          setEndLoc(firstDest.id);
+        // Validate or fallback the start location
+        let currentStart = startLoc;
+        if (building.nodes && building.nodes.length > 0) {
+          const startExists = building.nodes.find(
+            n => n.id === currentStart || n.label.toLowerCase() === currentStart.toLowerCase()
+          );
+          
+          if (!startExists) {
+            const fallbackStart = building.nodes.find(n => n.type === 'entrance') || building.nodes[0];
+            currentStart = fallbackStart.id;
+            setStartLoc(currentStart);
+          }
         }
+
+        // We no longer auto-select a destination. The user must manually choose from the dropdown.
 
         // Geo-fence: skip if no coordinates stored
         if (!building.latitude || !building.longitude) {
@@ -141,8 +149,16 @@ const IndoorNavigation = () => {
   };
 
   const pathCoords  = pathData?.path || [];
-  const startPoint  = pathCoords[0] || null;
-  const endPoint    = pathCoords[pathCoords.length - 1] || null;
+  
+  let startPoint = pathCoords[0] || null;
+  if (!startPoint && startLoc && nodes.length > 0) {
+    const node = nodes.find(n => n.id === startLoc);
+    if (node) {
+      startPoint = { x: node.x, y: node.y };
+    }
+  }
+
+  const endPoint = pathCoords[pathCoords.length - 1] || null;
 
   // -------------------------------------------------------------------------
   // Loading / error screens (preserved original markup exactly)
@@ -380,11 +396,13 @@ const IndoorNavigation = () => {
                   </span>
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {pathCoords.length > 1
-                    ? `Head towards ${pathCoords[1].label}`
-                    : endLoc
-                      ? 'Calculating route...'
-                      : 'Select a destination above'}
+                  {pathData?.error
+                    ? 'Route not found'
+                    : pathCoords.length > 1
+                      ? `Head towards ${pathCoords[1].label}`
+                      : endLoc
+                        ? 'Calculating route...'
+                        : 'Select a destination above'}
                 </h3>
                 <p className="text-slate-500 dark:text-[#9dabb9] text-sm">
                   {pathCoords.length > 2 ? `Next: ${pathCoords[2].label}` : pathCoords.length === 2 ? 'Next: Destination' : ''}

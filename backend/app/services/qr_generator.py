@@ -2,15 +2,14 @@ import qrcode
 import os
 from flask import current_app
 
-def generate_qr(building_name, building_id):
+def generate_qr(building_name, building_id, start_node_key="entrance"):
     """
     Generates a QR code linking to the visitor navigation interface for the given building.
-    The URL includes ?start=Entrance so the frontend pre-populates the start location.
+    The URL includes ?startNode=... so the frontend pre-populates the start location.
     Saves the QR image to the uploads folder.
     """
     # URL visitors hit when they scan the QR code.
-    # 'startNode=entrance' pre-fills the start node on the IndoorNavigation page.
-    url = f"http://localhost:5173/visitor/navigate/{building_id}?startNode=entrance"
+    url = f"http://localhost:5173/visitor/navigate/{building_id}?startNode={start_node_key}"
 
     qr = qrcode.QRCode(
         version=1,

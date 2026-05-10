@@ -109,8 +109,11 @@ def upload_blueprint():
             )
         )
 
-    # Generate QR with ?start=Entrance pre-filled
-    qr_path = generate_qr(building_name, str(building_id))
+    # Generate QR with dynamic startNode param
+    entrance_node = next((n for n in nodes if n.get('type') == 'entrance'), nodes[0] if nodes else None)
+    start_node_key = entrance_node.get('id', 'entrance') if entrance_node else 'entrance'
+
+    qr_path = generate_qr(building_name, str(building_id), start_node_key)
     cursor.execute('UPDATE buildings SET qr_path = ? WHERE id = ?', (qr_path, building_id))
 
     conn.commit()
