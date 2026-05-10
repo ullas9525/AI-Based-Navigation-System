@@ -14,6 +14,10 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     
+    # Initialize Database
+    from app.database import init_db
+    init_db()
+    
     # Register Blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(blueprints_bp, url_prefix='/api/blueprints')
