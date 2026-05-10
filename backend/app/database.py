@@ -28,10 +28,21 @@ def init_db():
         CREATE TABLE IF NOT EXISTS nodes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             building_id INTEGER,
+            node_key TEXT,
             label TEXT,
             x_coord INTEGER,
             y_coord INTEGER,
             type TEXT,
+            FOREIGN KEY(building_id) REFERENCES buildings(id)
+        )
+    ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS edges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            building_id INTEGER,
+            from_node TEXT,
+            to_node TEXT,
+            weight REAL DEFAULT 1.0,
             FOREIGN KEY(building_id) REFERENCES buildings(id)
         )
     ''')
