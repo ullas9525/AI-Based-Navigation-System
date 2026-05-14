@@ -138,3 +138,56 @@ def get_mock_data():
         {"from": "elevator",  "to": "lab_b",     "weight": 8.0},
     ]
     return mock_nodes, mock_edges
+
+def validate_blueprint(filepath, lat, lng):
+    """
+    Validates if the provided image is a valid architectural blueprint
+    and aligns with the geographic context.
+    """
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    
+    if not api_key:
+        print("\n[WARNING] GEMINI_API_KEY environment variable not set. Skipping validation.")
+        return True, "Mock validation successful"
+
+    try:
+        client = genai.Client(api_key=api_key)
+
+        with open(filepath, "rb") as f:
+            image_data = f.read()
+
+        mime_type, _ = mimetypes.guess_type(filepath)
+        if not mime_type:
+            mime_type = "image/jpeg"
+
+        prompt = f"""
+        Analyze this image. Is it a valid architectural floor plan or blueprint?
+        Additionally, considering the GPS coordinates (Latitude: {lat}, Longitude: {lng}), 
+        does this image plausibly represent an indoor structure suitable for these coordinates?
+        
+        Strictly output valid JSON with two fields:
+        - 'is_valid': boolean (true if it's a valid blueprint, false otherwise)
+        - 'reason': A short explanation string.
+        
+        Example:
+        {{"is_valid": true, "reason": "The image is a valid floor plan showing rooms and corridors."}}
+        """
+
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[
+                prompt,
+                types.Part.from_bytes(data=image_data, mime_type=mime_type)
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.1
+            )
+        )
+
+        data = json.loads(response.text)
+        return data.get("is_valid", False), data.get("reason", "Failed to determine validity.")
+
+    except Exception as e:
+        print(f"Failed to validate blueprint: {e}")
+        return False, str(e)

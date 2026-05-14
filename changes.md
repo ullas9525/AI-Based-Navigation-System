@@ -119,3 +119,40 @@
 
 ### Git Commit Message:
 `refactor: persist node coordinates in db and streamline georeferencing flow`
+
+---
+
+## [2026-05-14] — Blueprint Alignment Validation & Prominent Search
+
+### Requested:
+- Implement blueprint alignment validation using an internal model to ensure uploaded blueprints align with Google Maps data.
+- Redesign the destination input interface to use a prominent search prompt (similar to Google Maps) instead of automatically displaying a route.
+
+### Implemented:
+
+**1. Blueprint Alignment Validation (`image_processor.py`, `blueprints.py`)**
+- Added `validate_blueprint` service utilizing Gemini 2.5 Flash to verify that the uploaded image is a valid architectural floor plan and plausibly aligns with the provided latitude/longitude coordinates.
+- Integrated validation step into the `upload_blueprint` API endpoint. If validation fails, the system safely cleans up the file and returns a `400 Bad Request` with a specific misalignment error.
+
+**2. Prominent Destination Search (`IndoorNavigation.jsx`)**
+- Prevented automatic route calculation on map load by ensuring the destination state (`endLoc`) initializes as empty.
+- Created a prominent, centered search overlay that blocks standard map interaction until a destination is selected.
+- Updated the main top-bar destination selector to be hidden until the initial destination is picked from the prominent overlay, smoothly transitioning the UI from "search mode" to "navigation mode".
+
+### Files Modified:
+- `backend/app/services/image_processor.py` [MODIFIED]
+- `backend/app/api/blueprints.py` [MODIFIED]
+- `frontend/src/pages/IndoorNavigation.jsx` [MODIFIED]
+
+### Frameworks & Libraries Used:
+| Name | Type | Used In | Justification |
+|---|---|---|---|
+| Google Gemini 2.5 Flash | AI Model / API | Backend / AI | Used for multimodal validation to heuristically determine if an image constitutes a valid blueprint for a specific geographic context. Chosen for its zero-shot vision reasoning capabilities. |
+| React Tailwind CSS | UI Framework | Frontend | Utilized for rapidly styling the new prominent search overlay and handling responsive transitions between search and map states. |
+
+### Processing Details:
+- **Blueprint Alignment Flow**: Client uploads image + coordinates -> Flask API saves image -> `validate_blueprint` calls Gemini Vision API -> Gemini returns JSON `{"is_valid": true/false}` -> API either proceeds to Graph Extraction or aborts and returns 400 error.
+- **Search UI Flow**: Component Mounts -> If no destination, prominent overlay renders -> User selects node from dropdown -> State updates -> Overlay unmounts -> Topbar selector appears -> Route calculation triggered -> SVG path renders.
+
+### Git Commit Message:
+`feat: implement gemini blueprint alignment validation and prominent destination search overlay`

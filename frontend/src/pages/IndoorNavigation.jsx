@@ -205,27 +205,29 @@ const IndoorNavigation = () => {
             <h2 className="text-lg font-bold leading-tight tracking-[-0.015em]">IndoorNav</h2>
           </div>
 
-          {/* Destination selector — now a real dropdown populated from DB nodes */}
-          <div className="hidden md:flex flex-col min-w-40 h-10 w-96">
-            <div className="flex w-full flex-1 items-stretch rounded-xl h-full bg-slate-100 dark:bg-[#283039] focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-              <div className="text-slate-500 dark:text-[#9dabb9] flex border-none items-center justify-center pl-4 rounded-l-xl">
-                <span className="material-symbols-outlined text-[20px]">search</span>
+          {/* Destination selector — visible only after initial selection */}
+          {endLoc && (
+            <div className="hidden md:flex flex-col min-w-40 h-10 w-96 animate-[fadeIn_0.5s_ease-out]">
+              <div className="flex w-full flex-1 items-stretch rounded-xl h-full bg-slate-100 dark:bg-[#283039] focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                <div className="text-slate-500 dark:text-[#9dabb9] flex border-none items-center justify-center pl-4 rounded-l-xl">
+                  <span className="material-symbols-outlined text-[20px]">search</span>
+                </div>
+                <select
+                  id="destination-select"
+                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-[#9dabb9] px-3 text-sm font-normal leading-normal cursor-pointer"
+                  value={endLoc}
+                  onChange={(e) => setEndLoc(e.target.value)}
+                >
+                  <option value="">Change destination...</option>
+                  {nodes.map(node => (
+                    <option key={node.id} value={node.id}>
+                      {node.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <select
-                id="destination-select"
-                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-[#9dabb9] px-3 text-sm font-normal leading-normal cursor-pointer"
-                value={endLoc}
-                onChange={(e) => setEndLoc(e.target.value)}
-              >
-                <option value="">Select destination...</option>
-                {nodes.map(node => (
-                  <option key={node.id} value={node.id}>
-                    {node.label}
-                  </option>
-                ))}
-              </select>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="flex items-center gap-6">
@@ -242,6 +244,51 @@ const IndoorNavigation = () => {
 
       {/* ── Main Map Area ── */}
       <main className="flex-1 relative w-full h-full overflow-hidden bg-slate-100 dark:bg-[#11161d]">
+
+        {/* --- PROMINENT DESTINATION SEARCH OVERLAY --- */}
+        {!endLoc && !checkingLocation && !locationError && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white dark:bg-[#1c2127] w-full max-w-2xl rounded-3xl shadow-2xl p-8 flex flex-col gap-6 transform transition-all border border-slate-200 dark:border-slate-800">
+              <div className="flex flex-col gap-2 text-center">
+                <div className="mx-auto bg-primary/10 size-16 rounded-full flex items-center justify-center text-primary mb-2">
+                  <span className="material-symbols-outlined text-4xl">travel_explore</span>
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Where do you want to go?</h2>
+                <p className="text-slate-500 dark:text-[#9dabb9] text-lg">Search for a room, department, or amenity</p>
+              </div>
+
+              <div className="relative mt-4">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                  <span className="material-symbols-outlined text-2xl">search</span>
+                </div>
+                <select
+                  className="w-full pl-12 pr-4 py-5 rounded-2xl bg-slate-100 dark:bg-[#11161d] border-none text-slate-900 dark:text-white text-lg font-medium focus:ring-4 focus:ring-primary/20 appearance-none cursor-pointer shadow-inner"
+                  value={endLoc}
+                  onChange={(e) => setEndLoc(e.target.value)}
+                >
+                  <option value="" disabled>Select your destination...</option>
+                  {nodes.map(node => (
+                    <option key={node.id} value={node.id}>
+                      {node.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none text-slate-400">
+                  <span className="material-symbols-outlined text-xl">expand_more</span>
+                </div>
+              </div>
+              
+              <div className="flex justify-center mt-2">
+                <button 
+                  onClick={() => navigate('/')} 
+                  className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-sm font-medium transition"
+                >
+                  Cancel Navigation
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Blueprint image background — loaded dynamically from DB */}
         <div className="absolute inset-0 w-full h-full bg-slate-200 dark:bg-[#151b23] z-0 overflow-hidden">

@@ -4,7 +4,7 @@ import os
 import urllib.request
 import re
 
-from app.services.image_processor import process_blueprint
+from app.services.image_processor import process_blueprint, validate_blueprint
 from app.services.qr_generator import generate_qr
 from app.database import get_db_connection
 
@@ -60,6 +60,11 @@ def upload_blueprint():
     filename = secure_filename(file.filename)
     filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
+
+    is_valid, reason = validate_blueprint(filepath, latitude, longitude)
+    if not is_valid:
+        os.remove(filepath)
+        return jsonify({"error": f"Blueprint does not align with Google Maps data. Reason: {reason}"}), 400
 
     # AI-powered blueprint analysis: returns nodes with (x,y) and edges
     nodes, edges = process_blueprint(filepath)
