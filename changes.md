@@ -156,3 +156,59 @@
 
 ### Git Commit Message:
 `feat: implement gemini blueprint alignment validation and prominent destination search overlay`
+
+---
+
+## [2026-05-15] — Project Knowledge Graph Generation
+
+### Requested:
+- Execute the `graphify` workflow to visualize project architecture.
+
+### Implemented:
+- Resolved Python environment and verified `graphifyy` installation.
+- Detected 37 project files (Code, Docs, Images) totaling ~15k words.
+- Performed Structural Extraction (AST) resulting in 90 nodes and 176 edges.
+- Conducted Semantic Extraction to map conceptual relationships between components.
+- Generated a knowledge graph with 102 nodes, 107 edges, and 14 functional communities.
+- Produced interactive HTML visualization and an audit report (`GRAPH_REPORT.md`).
+- Achieved an 11.7x token reduction benchmark for architectural queries.
+
+### Files Modified:
+- `graphify-out/` [NEW]
+
+### Git Commit Message:
+`docs: generate project knowledge graph for architectural analysis`
+
+---
+
+## [2026-06-02] — QR Code Link Display
+
+### Requested:
+- Provide the navigation link encoded within the QR code directly below the QR code image.
+
+### Implemented:
+- Modified the blueprint upload API response to include the full `qr_destination_url` representing the entrance navigation deep link.
+- Fixed a `NameError` where `blueprint_url` became undefined during output payload construction.
+- Displayed the clickable, monospace `qr_destination_url` navigation link directly below the QR code download button in the blueprint upload results page ([BlueprintUpload.jsx](file:///e:/Muddu%20Items/AI%20Based%20Navigation%20System/frontend/src/pages/BlueprintUpload.jsx)).
+- Introduced a state variable `qrDestinationUrl` in `QrCodeGeneration.jsx` to keep track of the link encoded inside the generated QR code.
+- Rendered a new text container holding the formatted destination link directly below the QR code preview image within the physical signage card template.
+- Handled API service exceptions (like `503 Service Unavailable` or rate limiting) during validation in `image_processor.py` by gracefully bypassing validation.
+
+### Files Modified:
+- `backend/app/api/blueprints.py` [MODIFIED]
+- `backend/app/services/image_processor.py` [MODIFIED]
+- `frontend/src/pages/BlueprintUpload.jsx` [MODIFIED]
+- `frontend/src/pages/QrCodeGeneration.jsx` [MODIFIED]
+
+### Frameworks & Libraries Used:
+| Name | Type | Used In | Justification |
+|---|---|---|---|
+| React useState | Library | Frontend | Added state variable to track the destination navigation URL during QR generation. |
+
+### Processing Details:
+- **Upload Flow Integration**: Upon successful blueprint upload and graph compilation, the server responds with a georeferenced entrance navigation link, which the client UI renders as a clickable URL under the generated QR preview block.
+- **QR Generation URL Tracking**: On selection or click of the "Generate QR Code" button, the frontend sends request or falls back to creating a local URL. The destination link (`qrDestinationUrl`) is stored and displayed dynamically below the preview.
+
+### Git Commit Message:
+`feat: display the QR destination navigation link below the QR code preview on upload and generation screens`
+

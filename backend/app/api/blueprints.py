@@ -125,15 +125,17 @@ def upload_blueprint():
     conn.close()
 
     blueprint_url = f"/uploads/{os.path.basename(filepath)}"
+    qr_destination_url = f"http://localhost:5173/visitor/navigate/{building_id}?startNode={start_node_key}"
 
     return jsonify({
-        "message":        "Blueprint uploaded and analyzed successfully",
-        "building":       building_name,
-        "building_id":    building_id,
-        "nodes_detected": len(nodes),
-        "edges_detected": len(edges),
-        "blueprint_url":  blueprint_url,
-        "qr_code_url":    f"/uploads/{os.path.basename(qr_path)}"
+        "message":            "Blueprint uploaded and analyzed successfully",
+        "building":           building_name,
+        "building_id":        building_id,
+        "nodes_detected":     len(nodes),
+        "edges_detected":     len(edges),
+        "blueprint_url":      blueprint_url,
+        "qr_code_url":        f"/uploads/{os.path.basename(qr_path)}",
+        "qr_destination_url": qr_destination_url
     }), 200
 
 

@@ -9,6 +9,7 @@ const QrCodeGeneration = () => {
   const [includeScanMe, setIncludeScanMe] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('https://lh3.googleusercontent.com/aida-public/AB6AXuDfLgX6Q3BngyD2M37cIhhOi-fAz8HryvAVmwPO1YuYo4SQZzrs8GiQ_c2B_CIKlwG2776Ir4x43Jruct79Qq1O2PIHhVnuHtl4bHPghu8yJ5bHUTIwjmiywG18qQlcunewtVdjb7MfJx27odgmZNCtPmBmP1XM11_UTYK8zI5yzB6AiFOJnRdPfcA8RKrxr-FB2VUa0Y4jN5Pi4z_PdxTzMoQCRGHSNy7ykRbMfbA1HfHTCONH6JEDKcAxw17gNVqyWlUBGkBrirwN'); // Default placeholder
+  const [qrDestinationUrl, setQrDestinationUrl] = useState('http://localhost:5173/visitor/navigate/1?loc=Main%20Lobby%20Entrance');
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -23,6 +24,7 @@ const QrCodeGeneration = () => {
       // Assuming backend sends back a base64 Data URL or direct Image URL
       if (response.data.success && response.data.qr_code) {
         setQrCodeUrl(response.data.qr_code_url); // Or use the base64 code if provided
+        setQrDestinationUrl(response.data.destination_url);
 
         // In a real scenario you would set the src of the image to the response data
         alert(`QR Code generated for: ${response.data.destination_url}`);
@@ -30,7 +32,9 @@ const QrCodeGeneration = () => {
     } catch (err) {
       console.error("Error generating QR", err);
       // Fallback pseudo-generation for prototype feel
-      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=http://localhost:5173/visitor/navigate/1?loc=${encodeURIComponent(selectedLocation)}`);
+      const fallbackUrl = `http://localhost:5173/visitor/navigate/1?loc=${encodeURIComponent(selectedLocation)}`;
+      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(fallbackUrl)}`);
+      setQrDestinationUrl(fallbackUrl);
     } finally {
       setGenerating(false);
     }
@@ -159,6 +163,12 @@ const QrCodeGeneration = () => {
                         style={{ opacity: generating ? 0.5 : 1 }}
                         src={qrCodeUrl}
                       />
+                    </div>
+
+                    <div className="text-center w-full max-w-[240px] overflow-hidden text-ellipsis px-2 py-1.5 bg-slate-50 border border-slate-100 rounded-lg">
+                      <a href={qrDestinationUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary hover:underline font-mono break-all whitespace-normal">
+                        {qrDestinationUrl}
+                      </a>
                     </div>
 
                     <div className="text-center">

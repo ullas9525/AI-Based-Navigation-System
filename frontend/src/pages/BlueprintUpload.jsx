@@ -202,6 +202,18 @@ const BlueprintUpload = () => {
                             <span className="material-symbols-outlined text-lg">download</span>
                             Download QR
                           </a>
+                          {processStatus.qr_destination_url && (
+                            <div className="text-center w-full max-w-[200px] mt-1">
+                              <a
+                                href={processStatus.qr_destination_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[11px] text-primary hover:underline font-mono break-all whitespace-normal"
+                              >
+                                {processStatus.qr_destination_url}
+                              </a>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
