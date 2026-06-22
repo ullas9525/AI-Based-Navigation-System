@@ -170,7 +170,7 @@
 - Performed Structural Extraction (AST) resulting in 90 nodes and 176 edges.
 - Conducted Semantic Extraction to map conceptual relationships between components.
 - Generated a knowledge graph with 102 nodes, 107 edges, and 14 functional communities.
-- Produced interactive HTML visualization and an audit report (`GRAPH_REPORT.md`).
+- Produced interactive HTML visualization and an audit report (GRAPH_REPORT.md).
 - Achieved an 11.7x token reduction benchmark for architectural queries.
 
 ### Files Modified:
