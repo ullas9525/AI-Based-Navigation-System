@@ -1,6 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+import { Map3D } from '../components/ui/Map3D';
+import { PanoramaViewer } from '../components/ui/PanoramaViewer';
 
 const BASE_URL = 'http://localhost:5000';
 
@@ -23,6 +27,10 @@ const IndoorNavigation = () => {
   const [checkingLocation, setCheckingLocation] = useState(true);
   const [locationError, setLocationError]       = useState(null);
   const [buildingName, setBuildingName]         = useState('');
+  const [walls, setWalls]                       = useState([]);
+  
+  const [viewMode, setViewMode]                 = useState('3d'); // '3d' or 'panorama'
+  const [selectedNode, setSelectedNode]         = useState(null);
 
   // -------------------------------------------------------------------------
   // Haversine formula — distance between two GPS points in metres
@@ -51,6 +59,7 @@ const IndoorNavigation = () => {
 
         setBuildingName(building.name || '');
         setNodes(building.nodes || []);
+        setWalls(building.walls || []);
 
         // Set blueprint image URL (served from Flask /uploads/<filename>)
         if (building.blueprint_url) {
@@ -290,80 +299,45 @@ const IndoorNavigation = () => {
           </div>
         )}
 
-        {/* Blueprint image background — loaded dynamically from DB */}
+        {/* 3D Environment or Blueprint Background */}
         <div className="absolute inset-0 w-full h-full bg-slate-200 dark:bg-[#151b23] z-0 overflow-hidden">
-          <div
-            className="w-full h-full bg-cover bg-center opacity-80 dark:opacity-60 transform scale-105"
-            style={{
-              backgroundImage: blueprintUrl
-                ? `url('${blueprintUrl}')`
-                : "url('https://placeholder.pics/svg/300')"
-            }}
-          ></div>
-
-          {/* SVG path overlay — viewBox matches 0-1000 coordinate space */}
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-10 backdrop-blur-sm">
               <span className="material-symbols-outlined animate-spin text-white text-4xl">refresh</span>
             </div>
+          ) : viewMode === 'panorama' && selectedNode ? (
+            <>
+              <Canvas key="panorama" camera={{ position: [0, 0, 0], fov: 75 }}>
+                <OrbitControls makeDefault enableZoom={false} enablePan={false} target={[0.01, 0, 0]} />
+                <Suspense fallback={null}>
+                  <PanoramaViewer mediaPath={selectedNode.media_path} mediaType={selectedNode.media_type} />
+                </Suspense>
+              </Canvas>
+              <button 
+                onClick={() => { setViewMode('3d'); setSelectedNode(null); }}
+                className="absolute top-6 right-6 z-30 bg-white/10 hover:bg-white/20 backdrop-blur text-white px-4 py-2 rounded-xl border border-white/30 transition-colors flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-lg">close</span> Exit 360° View
+              </button>
+            </>
           ) : (
-            <svg
-              className="absolute inset-0 w-full h-full pointer-events-none z-10"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 1000 1000"
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <filter height="140%" id="glow" width="140%" x="-20%" y="-20%">
-                  <feGaussianBlur result="blur" stdDeviation="4"></feGaussianBlur>
-                  <feComposite in="SourceGraphic" in2="blur" operator="over"></feComposite>
-                </filter>
-              </defs>
-
-              {/* Dynamic path polyline from route API */}
-              {pathCoords.length > 1 && (
-                <polyline
-                  className="animate-[dash_20s_linear_infinite]"
-                  points={buildPolylinePoints(pathCoords)}
-                  fill="none"
-                  filter="url(#glow)"
-                  stroke="#137fec"
-                  strokeDasharray="12 6"
-                  strokeLinecap="round"
-                  strokeWidth="6"
-                />
-              )}
-
-              {/* Intermediate waypoint dots */}
-              {pathCoords.slice(1, -1).map((pt, i) => (
-                <circle
-                  key={`waypoint-${i}`}
-                  cx={pt.x}
-                  cy={pt.y}
-                  r="6"
-                  fill="#137fec"
-                  opacity="0.6"
-                />
-              ))}
-
-              {/* Current Location — pulsing dot at path start */}
-              {startPoint && (
-                <circle cx={startPoint.x} cy={startPoint.y} fill="#137fec" r="12" stroke="white" strokeWidth="3">
-                  <animate attributeName="r" dur="2s" repeatCount="indefinite" values="12;16;12"></animate>
-                  <animate attributeName="opacity" dur="2s" repeatCount="indefinite" values="1;0.7;1"></animate>
-                </circle>
-              )}
-
-              {/* Destination Pin at path end */}
-              {endPoint && (
-                <g transform={`translate(${endPoint.x - 12}, ${endPoint.y - 32})`}>
-                  <path
-                    d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20c0-6.63-5.37-12-12-12zm0 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"
-                    fill="#ef4444"
-                  ></path>
-                </g>
-              )}
-            </svg>
+            <Canvas key="map3d" camera={{ position: [0, 60, 40], fov: 50 }}>
+              <OrbitControls target={[0, 0, 0]} maxPolarAngle={Math.PI / 2 - 0.1} />
+              <Map3D 
+                walls={walls} 
+                path={pathCoords} 
+                allNodes={nodes} 
+                customStart={typeof startLoc === 'object' ? startLoc : null}
+                customEnd={typeof endLoc === 'object' ? endLoc : null}
+                onMapClick={(coords) => setStartLoc(coords)}
+                onNodeClick={(node) => {
+                  if (node.media_path) {
+                    setSelectedNode(node);
+                    setViewMode('panorama');
+                  }
+                }}
+              />
+            </Canvas>
           )}
         </div>
 
@@ -376,7 +350,7 @@ const IndoorNavigation = () => {
             <div className="flex flex-col overflow-hidden">
               <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wide">From</span>
               <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                {nodes.find(n => n.id === startLoc)?.label || startLoc}
+                {typeof startLoc === 'object' ? 'Custom Location' : (nodes.find(n => n.id === startLoc)?.label || startLoc)}
               </span>
             </div>
           </div>
@@ -390,7 +364,7 @@ const IndoorNavigation = () => {
             <div className="flex flex-col overflow-hidden">
               <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wide">To</span>
               <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                {nodes.find(n => n.id === endLoc)?.label || endLoc || 'Select destination'}
+                {typeof endLoc === 'object' ? 'Custom Destination' : (nodes.find(n => n.id === endLoc)?.label || endLoc || 'Select destination')}
               </span>
             </div>
           </div>

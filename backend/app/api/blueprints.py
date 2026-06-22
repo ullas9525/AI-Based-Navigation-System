@@ -66,8 +66,8 @@ def upload_blueprint():
         os.remove(filepath)
         return jsonify({"error": f"Blueprint does not align with Google Maps data. Reason: {reason}"}), 400
 
-    # AI-powered blueprint analysis: returns nodes with (x,y) and edges
-    nodes, edges = process_blueprint(filepath)
+    # AI-powered blueprint analysis: returns nodes with (x,y), edges, and walls
+    nodes, edges, walls = process_blueprint(filepath)
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -114,6 +114,20 @@ def upload_blueprint():
             )
         )
 
+    # --- Persist WALLS ---
+    for wall in walls:
+        cursor.execute(
+            '''INSERT INTO walls (building_id, x1, y1, x2, y2)
+               VALUES (?, ?, ?, ?, ?)''',
+            (
+                building_id,
+                int(wall.get('x1', 0)),
+                int(wall.get('y1', 0)),
+                int(wall.get('x2', 0)),
+                int(wall.get('y2', 0))
+            )
+        )
+
     # Generate QR with dynamic startNode param
     entrance_node = next((n for n in nodes if n.get('type') == 'entrance'), nodes[0] if nodes else None)
     start_node_key = entrance_node.get('id', 'entrance') if entrance_node else 'entrance'
@@ -133,9 +147,11 @@ def upload_blueprint():
         "building_id":        building_id,
         "nodes_detected":     len(nodes),
         "edges_detected":     len(edges),
+        "walls_detected":     len(walls),
         "blueprint_url":      blueprint_url,
         "qr_code_url":        f"/uploads/{os.path.basename(qr_path)}",
-        "qr_destination_url": qr_destination_url
+        "qr_destination_url": qr_destination_url,
+        "nodes":              nodes
     }), 200
 
 
@@ -155,7 +171,13 @@ def get_building(building_id):
 
     # Fetch nodes for the frontend node-selector dropdown
     nodes_rows = conn.execute(
-        'SELECT node_key, label, x_coord, y_coord, type FROM nodes WHERE building_id = ?',
+        'SELECT node_key, label, x_coord, y_coord, type, media_path, media_type FROM nodes WHERE building_id = ?',
+        (building_id,)
+    ).fetchall()
+
+    # Fetch walls for 3D map generation
+    walls_rows = conn.execute(
+        'SELECT x1, y1, x2, y2 FROM walls WHERE building_id = ?',
         (building_id,)
     ).fetchall()
     conn.close()
@@ -168,13 +190,25 @@ def get_building(building_id):
 
     nodes = [
         {
-            "id":    row["node_key"],
-            "label": row["label"],
-            "x":     row["x_coord"],
-            "y":     row["y_coord"],
-            "type":  row["type"]
+            "id":         row["node_key"],
+            "label":      row["label"],
+            "x":          row["x_coord"],
+            "y":          row["y_coord"],
+            "type":       row["type"],
+            "media_path": row["media_path"],
+            "media_type": row["media_type"]
         }
         for row in nodes_rows
+    ]
+
+    walls = [
+        {
+            "x1": row["x1"],
+            "y1": row["y1"],
+            "x2": row["x2"],
+            "y2": row["y2"]
+        }
+        for row in walls_rows
     ]
 
     return jsonify({
@@ -183,5 +217,6 @@ def get_building(building_id):
         "latitude":      building["latitude"],
         "longitude":     building["longitude"],
         "blueprint_url": blueprint_url,
-        "nodes":         nodes
+        "nodes":         nodes,
+        "walls":         walls
     }), 200

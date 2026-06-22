@@ -212,3 +212,85 @@
 ### Git Commit Message:
 `feat: display the QR destination navigation link below the QR code preview on upload and generation screens`
 
+---
+
+## [2026-06-05] — 3D Map Navigation & Media Uploads
+
+### Requested:
+- Utilize 3D maps instead of 2D, including 3D rooms and hallways.
+- Support uploading photos and videos along with the blueprint.
+- Navigate through 3D environments when a QR code is scanned.
+
+### Implemented:
+- Updated the backend database schema to include `media_path` and `media_type` in the `nodes` table, and added a `walls` table.
+- Modified the Gemini AI prompt in `image_processor.py` to extract exact wall coordinates (`x1, y1, x2, y2`) in addition to the node graph.
+- Created `media.py` API endpoint to handle 360-degree media uploads for specific nodes, saving them to the `uploads/media/` directory.
+- Added a Node Media Management section in `BlueprintUpload.jsx` for admins to attach media to nodes after a successful blueprint analysis.
+- Integrated `@react-three/fiber` and `@react-three/drei` into the frontend.
+- Built `Map3D.jsx` to procedurally render the floor plan walls as extruded 3D boxes and display the Dijkstra routing path as a glowing 3D line.
+- Built `PanoramaViewer.jsx` to render 360-degree image/video spheres inside a 3D canvas when a user explores a media-attached node.
+- Replaced the 2D SVG overlay in `IndoorNavigation.jsx` with the 3D `<Canvas>`, allowing users to toggle between a 3D bird's-eye map and immersive 360-degree panorama mode.
+
+### Files Modified:
+- `backend/app/database.py` [MODIFIED]
+- `backend/app/services/image_processor.py` [MODIFIED]
+- `backend/app/api/blueprints.py` [MODIFIED]
+- `backend/app/api/navigation.py` [MODIFIED]
+- `backend/app/api/media.py` [NEW]
+- `backend/app.py` [MODIFIED]
+- `frontend/src/pages/BlueprintUpload.jsx` [MODIFIED]
+- `frontend/src/components/ui/Map3D.jsx` [NEW]
+- `frontend/src/components/ui/PanoramaViewer.jsx` [NEW]
+- `frontend/src/pages/IndoorNavigation.jsx` [MODIFIED]
+- `frontend/package.json` [MODIFIED]
+
+### Frameworks & Libraries Used:
+| Name | Type | Used In | Justification |
+|---|---|---|---|
+| Three.js | Library | Frontend | The core WebGL engine required to render the 3D map environment, geometry, and materials. Selected due to its industry-standard performance and capability. |
+| React Three Fiber | Library | Frontend | A React reconciler for Three.js. Chosen because it allows writing declarative 3D scenes using React components, tightly integrating with the existing React architecture. |
+| React Three Drei | Library | Frontend | A collection of useful helpers for React Three Fiber. Used for OrbitControls and rapid geometry generation, avoiding boilerplate WebGL code. |
+
+### Processing Details:
+- **3D AI Extraction Flow**: Upload blueprint -> Image processed by Gemini AI -> Returns nodes, edges, and *wall bounds* -> Saved to SQLite `walls` table.
+- **Node Media Upload Flow**: Admin selects a node -> Uploads file -> Flask `/api/media` handles `multipart/form-data` -> Saves file locally -> Updates node `media_path` and `media_type`.
+- **3D Rendering Flow**: `IndoorNavigation.jsx` fetches `nodes`, `walls`, and `route` -> Renders `<Canvas>` -> `Map3D` procedurally generates 3D Box geometries for walls based on AI-extracted coordinates -> Overlays `<Line>` for route.
+- **Immersive Transition**: If user clicks a node with a `media_path` -> Switches to `panorama` view mode -> Mounts `PanoramaViewer` -> Creates `<sphereGeometry>` mapped with the media texture.
+
+### Git Commit Message:
+`feat: implement 3D map rendering, exact wall extraction, and 360-degree node media uploads using react-three-fiber`
+
+---
+
+## [2026-06-06] — Advanced Dynamic Navigation & Wall Gap Fixes
+
+### Requested:
+- Fix AI blueprint analysis so it properly leaves gaps for doors/windows and avoids drawing continuous blocks.
+- Allow users to click anywhere on the 3D map to precisely set their custom start coordinate.
+- Allow arbitrary start-to-end routing that intelligently avoids walls by passing through the physical door gaps.
+
+### Implemented:
+- **AI Prompt Hardening**: Inserted explicit `CRITICAL RULE` in `image_processor.py` instructing Gemini 2.5 Flash to split wall geometries wherever a door or window gap exists.
+- **Line-of-Sight Pathfinding**: Rewrote `/route` in `navigation.py` to support full coordinate-based pathfinding without relying on predefined nodes.
+- **Graph Injection Algorithm**: Any custom coordinate `{x, y}` is temporarily injected into the NetworkX spatial graph during calculation.
+- **Line Segment Intersection**: Implemented robust intersection math to verify that the path between the custom point and any existing node does not cross a wall line segment. If line-of-sight is clear, the edge is valid.
+- **Frontend Interactivity**: Added an `onPointerDown` raycaster to the floor mesh in `Map3D.jsx` to capture the 3D intersect, map it back to 2D space, and trigger `onMapClick(x, y)`.
+- **Dynamic Pins**: Added responsive `Custom Location` floating HTML badges and coloured sphere geometries to precisely mark non-node points on the 3D map.
+
+### Files Modified:
+- `backend/app/services/image_processor.py` [MODIFIED]
+- `backend/app/api/navigation.py` [MODIFIED]
+- `frontend/src/components/ui/Map3D.jsx` [MODIFIED]
+- `frontend/src/pages/IndoorNavigation.jsx` [MODIFIED]
+
+### Frameworks & Libraries Used:
+| Name | Type | Used In | Justification |
+|---|---|---|---|
+| Native Python Math | Core | Backend | Used for line segment intersection geometric algorithms. Eliminates the need to import heavy dependencies like Shapely for simple 2D collision detection. |
+| React Three Drei Html | Utility | Frontend | Used to anchor standard DOM elements (the location badges) to specific Vector3 points in the 3D scene. Avoids manual 3D-to-2D projection mapping. |
+
+### Processing Details:
+- **Line-of-Sight Pathfinding Flow**: Client clicks floor -> Frontend sends `{"x": val, "y": val}` in route POST request -> Backend fetches all walls -> Custom `{x,y}` is compared to every other node using a mathematical intersection formula against every wall boundary -> If no wall intersects the line, an edge is created with a weight equal to Euclidean distance -> Dijkstra shortest path resolves and returns standard `[x,y]` steps.
+
+### Git Commit Message:
+`feat: introduce dynamic coordinate-based line-of-sight pathfinding and AI wall gap generation`

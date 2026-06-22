@@ -13,13 +13,13 @@ A building administrator uploads an architectural blueprint image. Google Gemini
 ```
 [Admin] ──Upload Blueprint──► [Flask API] ──► [Gemini Vision AI]
                                    │                  │
-                             [SQLite DB] ◄── Nodes + Edges + Coords
-                                   │
+         ┌──Upload 360 Media──► [SQLite DB] ◄── Nodes + Edges + Walls + Coords
+         │                         │
 [Visitor QR Scan] ──────────► [React Frontend]
                                    │
                           [POST /api/navigation/route]
                                    │
-                          [NetworkX Dijkstra] ──► [SVG Path on Blueprint]
+                          [NetworkX Dijkstra] ──► [3D Map3D Canvas / PanoramaViewer]
 ```
 
 ---
@@ -31,6 +31,7 @@ A building administrator uploads an architectural blueprint image. Google Gemini
 | Programming Lang   | Python 3.x (Backend), JavaScript (Frontend) |
 | Backend Framework  | Flask 3.x                               |
 | Frontend Framework | React 18 + Vite                         |
+| 3D Graphics        | Three.js + React Three Fiber            |
 | Database           | SQLite 3                                |
 | AI / Vision        | Google Gemini 2.5 Flash (via `google-genai`) |
 | Graph Engine       | NetworkX                                |
@@ -63,6 +64,9 @@ A building administrator uploads an architectural blueprint image. Google Gemini
 | Library             | Type      | Purpose                                                                 |
 |---------------------|-----------|-------------------------------------------------------------------------|
 | `React`             | Framework | Component-based UI library for building the navigation interface        |
+| `three`             | Library   | WebGL 3D engine for rendering the extruded floor plans                  |
+| `@react-three/fiber`| Library   | React renderer for Three.js, allows declarative 3D scenes               |
+| `@react-three/drei` | Library   | Helpers for R3F (OrbitControls, Lines, etc.)                            |
 | `react-router-dom`  | Library   | SPA routing — `/visitor/navigate/:buildingId`, `/admin/blueprint`, etc. |
 | `axios`             | Library   | Promise-based HTTP client for all API calls (upload, route, nodes)      |
 | `Vite`              | Tool      | Build tool and dev server — instant HMR during development              |
@@ -88,8 +92,12 @@ A building administrator uploads an architectural blueprint image. Google Gemini
 - **Why not FastAPI:** Flask is sufficient for the synchronous request pattern here. FastAPI's async advantage would only apply at high concurrency.
 
 ### React + Vite (Frontend)
-- **Why chosen:** Vite's HMR provides sub-second refresh during development. React's component model isolates the SVG path overlay, floor switcher, and node selector cleanly.
+- **Why chosen:** Vite's HMR provides sub-second refresh during development. React's component model isolates the 3D Canvas, floor switcher, and node selector cleanly.
 - **Why not Next.js:** No SSR required — this is a pure SPA. Next.js overhead is unnecessary for a single-page navigation tool.
+
+### Three.js + React Three Fiber (3D Graphics)
+- **Why chosen:** Required to fulfill the requirement for a 3D environment. R3F allows building complex WebGL scenes declaratively inside the existing React app.
+- **Exact benefit:** Generates 3D walls procedurally from AI coordinates, plots Dijkstra paths in 3D, and natively supports mapping equirectangular 360° videos/photos onto `<sphereGeometry>` for a Google Street View-like immersive experience.
 
 ### SQLite (Database)
 - **Why chosen:** Zero-configuration embedded database. Stores buildings, nodes, and edges without a separate server process.
@@ -112,13 +120,14 @@ A building administrator uploads an architectural blueprint image. Google Gemini
 [3] process_blueprint(filepath) → image_processor.py
      │ Reads image bytes
      │ Sends to Gemini 2.5 Flash with structured prompt:
-     │   → Returns JSON: {nodes: [{id, type, label, x%, y%}], edges: [{from, to, weight}]}
+     │   → Returns JSON: {nodes: [{id...}], edges: [{from...}], walls: [{x1,y1...}]}
      │ Scales x,y from 0–100% to 0–1000 integer coordinate space
      ▼
 [4] SQLite INSERT
      │ buildings(name, blueprint_path, latitude, longitude)
      │ nodes(building_id, node_key, label, x_coord, y_coord, type)  × N nodes
      │ edges(building_id, from_node, to_node, weight)               × M edges
+     │ walls(building_id, x1, y1, x2, y2)                           × W walls
      ▼
 [5] generate_qr(building_name, building_id) → qr_generator.py
      │ URL: http://localhost:5173/visitor/navigate/{id}?start=Entrance
@@ -178,10 +187,9 @@ A building administrator uploads an architectural blueprint image. Google Gemini
 [4] User selects destination from <select> dropdown
 [5] fetchRoute() → POST /api/navigation/route
      │ Returns path[] with (x,y) in 0–1000 coordinate space
-[6] SVG renders with viewBox="0 0 1000 1000" over blueprint image
-     │ <polyline points="500,950 500,800 500,600 150,500"> → path line
-     │ <circle cx=500 cy=950> → pulsing start dot
-     │ <g transform="translate(138,468)"> → red destination pin
+[6] Canvas renders 3D components
+     │ <Map3D> procedural generation of wall BoxGeometries and route path <Line>
+     │ <PanoramaViewer> immersive Street View mode triggered if the user clicks a node with media
 ```
 
 ---
@@ -240,6 +248,14 @@ A building administrator uploads an architectural blueprint image. Google Gemini
 | from_node   | TEXT    | Source node_key                         |
 | to_node     | TEXT    | Destination node_key                    |
 | weight      | REAL    | Approximate walking distance in metres  |
+
+### `walls`
+| Column      | Type    | Description                               |
+|-------------|---------|-------------------------------------------|
+| id          | INTEGER | Primary key                               |
+| building_id | INTEGER | Foreign key → buildings.id                |
+| x1, y1      | INTEGER | Start point coordinate (0-1000 scale)     |
+| x2, y2      | INTEGER | End point coordinate (0-1000 scale)       |
 
 ---
 

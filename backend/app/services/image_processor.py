@@ -37,16 +37,20 @@ def process_blueprint(filepath):
 
         prompt = """
         Analyze this building blueprint/floorplan.
-        Your goal is to extract a logical navigation graph with precise spatial coordinates.
+        Your goal is to extract a logical navigation graph with precise spatial coordinates and the exact wall bounds.
 
-        Strictly output valid JSON containing two lists:
+        Strictly output valid JSON containing three lists:
         - 'nodes': addressable rooms, hallways, entrances, stairs, elevators
         - 'edges': walkable connections between nodes
+        - 'walls': physical walls or boundaries separating rooms/hallways
+
+        CRITICAL RULE FOR WALLS:
+        - DO NOT create continuous blocks of walls over doors, windows, or clear gaps.
+        - If there is a door or a gap in a wall, you MUST split the wall into two separate segments that stop at the edges of the gap.
 
         IMPORTANT for coordinates:
-        - 'x' is the horizontal percentage position of the node on the image (0 = far left, 100 = far right)
-        - 'y' is the vertical percentage position of the node on the image (0 = top, 100 = bottom)
-        - Estimate these visually based on where each room/area appears in the blueprint
+        - 'x' (or 'x1'/'x2') is the horizontal percentage position on the image (0 = far left, 100 = far right)
+        - 'y' (or 'y1'/'y2') is the vertical percentage position on the image (0 = top, 100 = bottom)
 
         Use this exact schema:
         {
@@ -61,13 +65,15 @@ def process_blueprint(filepath):
            ],
            "edges": [
               {"from": "node_1", "to": "node_2", "weight": 5.0}
+           ],
+           "walls": [
+              {"x1": 10, "y1": 20, "x2": 90, "y2": 20}
            ]
         }
 
         Rules:
         - Keep nodes under 25 for a solid connected graph
-        - Make sure every node is reachable from every other node (fully connected graph)
-        - Weights should approximate walking distance in meters
+        - Extract the main bounding walls and interior walls
         - x and y must be integers between 0 and 100
         """
 
@@ -86,15 +92,22 @@ def process_blueprint(filepath):
         data = json.loads(response.text)
         nodes_raw = data.get("nodes", [])
         edges_raw = data.get("edges", [])
+        walls_raw = data.get("walls", [])
 
         # Scale x,y from 0-100 percentage to 0-1000 integer coordinate space
         for node in nodes_raw:
             node['x'] = int(float(node.get('x', 50)) * 10)
             node['y'] = int(float(node.get('y', 50)) * 10)
+            
+        for wall in walls_raw:
+            wall['x1'] = int(float(wall.get('x1', 0)) * 10)
+            wall['y1'] = int(float(wall.get('y1', 0)) * 10)
+            wall['x2'] = int(float(wall.get('x2', 0)) * 10)
+            wall['y2'] = int(float(wall.get('y2', 0)) * 10)
 
         print(f"Successfully generated navigation graph from Gemini! "
-              f"({len(nodes_raw)} nodes, {len(edges_raw)} edges)")
-        return nodes_raw, edges_raw
+              f"({len(nodes_raw)} nodes, {len(edges_raw)} edges, {len(walls_raw)} walls)")
+        return nodes_raw, edges_raw, walls_raw
 
     except Exception as e:
         print(f"Failed to parse AI response: {e}")

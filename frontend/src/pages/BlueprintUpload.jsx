@@ -168,6 +168,39 @@ const BlueprintUpload = () => {
                           <p className="text-xs font-mono bg-white dark:bg-black/20 p-2 rounded">{processStatus?.qr_code_url}</p>
                         </div>
 
+                        {processStatus?.nodes && processStatus.nodes.length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-800/50">
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Attach 360° Media to Nodes:</p>
+                            <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-2">
+                              {processStatus.nodes.map(node => (
+                                <div key={node.id} className="flex flex-col gap-2 p-3 bg-white dark:bg-[#202934] rounded border border-slate-200 dark:border-slate-700">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium">{node.label} <span className="text-xs text-slate-500">({node.type})</span></span>
+                                  </div>
+                                  <input 
+                                    type="file" 
+                                    accept=".jpg,.jpeg,.png,.mp4,.webm"
+                                    className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-primary file:text-white hover:file:bg-blue-600"
+                                    onChange={async (e) => {
+                                      const file = e.target.files[0];
+                                      if (!file) return;
+                                      
+                                      const formData = new FormData();
+                                      formData.append('file', file);
+                                      try {
+                                        await axios.post(`http://localhost:5000/api/media/node/${processStatus.building_id}/${node.id}`, formData);
+                                        alert(`Successfully uploaded media for ${node.label}`);
+                                      } catch (err) {
+                                        alert(`Failed to upload media: ${err.response?.data?.error || err.message}`);
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <button onClick={() => { setProcessStatus(null) }} className="mt-2 w-fit px-4 py-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-sm font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition">
                           Upload Another
                         </button>
