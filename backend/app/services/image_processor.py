@@ -1,5 +1,6 @@
 import os
 import json
+import math
 import mimetypes
 from dotenv import load_dotenv
 from google import genai
@@ -105,6 +106,9 @@ def process_blueprint(filepath):
             wall['x2'] = int(float(wall.get('x2', 0)) * 10)
             wall['y2'] = int(float(wall.get('y2', 0)) * 10)
 
+        # Post-process: split long walls into segments with door gaps
+        walls_raw = split_long_walls(walls_raw)
+
         print(f"Successfully generated navigation graph from Gemini! "
               f"({len(nodes_raw)} nodes, {len(edges_raw)} edges, {len(walls_raw)} walls)")
         return nodes_raw, edges_raw, walls_raw
@@ -151,6 +155,46 @@ def get_mock_data():
         {"from": "elevator",  "to": "lab_b",     "weight": 8.0},
     ]
     return mock_nodes, mock_edges
+
+def split_long_walls(walls, max_segment_length=180, gap_width=12):
+    """
+    Post-processing: splits walls longer than max_segment_length into
+    multiple segments with door-width gaps between them.
+
+    This fixes Gemini's tendency to draw continuous wall blocks across
+    door openings — every long wall is automatically broken into
+    walkable segments.
+    """
+    result = []
+    for wall in walls:
+        x1, y1 = wall['x1'], wall['y1']
+        x2, y2 = wall['x2'], wall['y2']
+
+        length = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
+        if length <= max_segment_length:
+            result.append(wall)
+            continue
+
+        dx = (x2 - x1) / length
+        dy = (y2 - y1) / length
+
+        num_gaps = int(length // max_segment_length)
+        total_gap = num_gaps * gap_width
+        seg_len = (length - total_gap) / (num_gaps + 1)
+
+        cx, cy = x1, y1
+        for _ in range(num_gaps + 1):
+            sx = cx + dx * seg_len
+            sy = cy + dy * seg_len
+            result.append({
+                'x1': round(cx), 'y1': round(cy),
+                'x2': round(sx), 'y2': round(sy)
+            })
+            cx = sx + dx * gap_width
+            cy = sy + dy * gap_width
+
+    return result
 
 def validate_blueprint(filepath, lat, lng):
     """
