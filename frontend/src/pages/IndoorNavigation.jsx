@@ -32,6 +32,11 @@ const IndoorNavigation = () => {
   const [viewMode, setViewMode]                 = useState('3d'); // '3d' or 'panorama'
   const [selectedNode, setSelectedNode]         = useState(null);
 
+  // Mutually exclusive control mode: '3d' (rotate) or 'location' (click to set position)
+  const [controlMode, setControlMode] = useState('3d');
+  const enableOrbit = controlMode === '3d';
+  const enableMapClick = controlMode === 'location';
+
   // -------------------------------------------------------------------------
   // Haversine formula — distance between two GPS points in metres
   // -------------------------------------------------------------------------
@@ -322,14 +327,14 @@ const IndoorNavigation = () => {
             </>
           ) : (
             <Canvas key="map3d" camera={{ position: [0, 60, 40], fov: 50 }}>
-              <OrbitControls target={[0, 0, 0]} maxPolarAngle={Math.PI / 2 - 0.1} />
+              <OrbitControls target={[0, 0, 0]} maxPolarAngle={Math.PI / 2 - 0.1} enabled={enableOrbit} />
               <Map3D 
                 walls={walls} 
                 path={pathCoords} 
                 allNodes={nodes} 
                 customStart={typeof startLoc === 'object' ? startLoc : null}
                 customEnd={typeof endLoc === 'object' ? endLoc : null}
-                onMapClick={(coords) => setStartLoc(coords)}
+                onMapClick={enableMapClick ? (coords) => setStartLoc(coords) : null}
                 onNodeClick={(node) => {
                   if (node.media_path) {
                     setSelectedNode(node);
@@ -385,19 +390,31 @@ const IndoorNavigation = () => {
           </div>
         </div>
 
-        {/* Floating Controls: Zoom Tools */}
-        <div className="absolute right-6 bottom-[180px] lg:bottom-[200px] flex flex-col gap-3 z-20">
-          <button className="flex size-12 items-center justify-center rounded-xl bg-white dark:bg-[#1c2127] text-slate-700 dark:text-white shadow-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-[#283039] transition-all">
-            <span className="material-symbols-outlined">my_location</span>
-          </button>
-          <div className="flex flex-col rounded-xl bg-white dark:bg-[#1c2127] shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
-            <button className="flex size-10 items-center justify-center text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-[#283039] transition-all border-b border-slate-100 dark:border-slate-800">
-              <span className="material-symbols-outlined">add</span>
+        {/* Floating Controls: Mode Toggle (3D / Location) */}
+        <div className="absolute right-6 bottom-[180px] lg:bottom-[200px] flex flex-col gap-2 z-20">
+          <div className="bg-white dark:bg-[#1c2127] rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 p-1.5 flex flex-col gap-1">
+            <button
+              onClick={() => setControlMode('location')}
+              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${controlMode === 'location' ? 'bg-primary text-white shadow-md' : 'text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary hover:bg-slate-100 dark:hover:bg-[#283039]'}`}
+              title="Click on map to set location"
+            >
+              <span className="material-symbols-outlined text-xl">my_location</span>
+              <span>Locate</span>
             </button>
-            <button className="flex size-10 items-center justify-center text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-[#283039] transition-all">
-              <span className="material-symbols-outlined">remove</span>
+            <button
+              onClick={() => setControlMode('3d')}
+              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${controlMode === '3d' ? 'bg-primary text-white shadow-md' : 'text-slate-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary hover:bg-slate-100 dark:hover:bg-[#283039]'}`}
+              title="Rotate and explore the 3D map"
+            >
+              <span className="material-symbols-outlined text-xl">3d_rotation</span>
+              <span>3D</span>
             </button>
           </div>
+          {enableMapClick && (
+            <div className="bg-blue-500/10 backdrop-blur border border-blue-500/30 rounded-lg px-3 py-1.5 text-center shadow">
+              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Click map to set start</span>
+            </div>
+          )}
         </div>
 
         {/* Bottom Panel: Navigation Steps */}
