@@ -61,10 +61,12 @@ def upload_blueprint():
     filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
 
-    is_valid, reason = validate_blueprint(filepath, latitude, longitude)
-    if not is_valid:
-        os.remove(filepath)
-        return jsonify({"error": f"Blueprint does not align with Google Maps data. Reason: {reason}"}), 400
+    # Skip Gemini validation if no map link provided (lat/lng will be 0,0)
+    if latitude != 0.0 or longitude != 0.0:
+        is_valid, reason = validate_blueprint(filepath, latitude, longitude)
+        if not is_valid:
+            os.remove(filepath)
+            return jsonify({"error": f"Blueprint does not align with Google Maps data. Reason: {reason}"}), 400
 
     # AI-powered blueprint analysis: returns nodes with (x,y), edges, and walls
     nodes, edges, walls = process_blueprint(filepath)
