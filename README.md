@@ -186,4 +186,4 @@ curl -X POST https://ai-based-navigation-system.onrender.com/api/navigation/rout
 
 ## License
 
-This project is private and not currently licensed for public distribution.
+MIT License — see [LICENSE.txt](LICENSE.txt).
