@@ -186,4 +186,4 @@ curl -X POST https://ai-based-navigation-system.onrender.com/api/navigation/rout
 
 ## License
 
-MIT License — see [LICENSE.txt](LICENSE.txt).
+MIT License — see [LICENSE](LICENSE.txt).
