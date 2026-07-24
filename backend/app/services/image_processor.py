@@ -27,7 +27,7 @@ def process_blueprint(filepath):
     print(f"Sending {filepath} to Gemini API for mapping analysis...")
 
     try:
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(api_key=api_key, http_options={'timeout': 120000})
 
         with open(filepath, "rb") as f:
             image_data = f.read()
@@ -208,7 +208,7 @@ def validate_blueprint(filepath, lat, lng):
         return True, "Mock validation successful"
 
     try:
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(api_key=api_key, http_options={'timeout': 120000})
 
         with open(filepath, "rb") as f:
             image_data = f.read()
