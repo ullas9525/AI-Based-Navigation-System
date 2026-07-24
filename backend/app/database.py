@@ -17,6 +17,10 @@ def _get_pg_conn():
     conn.autocommit = False
     return conn, 'postgres'
 
+def _pg_cursor(conn):
+    import psycopg2.extras
+    return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
 class DbConnection:
     def __init__(self):
         if DATABASE_URL:
@@ -32,13 +36,13 @@ class DbConnection:
 
     def execute(self, sql, params=None):
         sql, params = self._fix_params(sql, params)
-        self._cursor = self._conn.cursor()
+        self._cursor = _pg_cursor(self._conn) if self._vendor == 'postgres' else self._conn.cursor()
         self._cursor.execute(sql, params or ())
         return self
 
     def executemany(self, sql, seq):
         sql, _ = self._fix_params(sql, None)
-        self._cursor = self._conn.cursor()
+        self._cursor = _pg_cursor(self._conn) if self._vendor == 'postgres' else self._conn.cursor()
         self._cursor.executemany(sql, seq)
         return self
 
@@ -52,7 +56,8 @@ class DbConnection:
     def lastrowid(self):
         if self._vendor == 'sqlite':
             return self._cursor.lastrowid
-        return self._cursor.fetchone()[0]
+        row = self._cursor.fetchone()
+        return row['id'] if row else None
 
     def commit(self):
         self._conn.commit()
