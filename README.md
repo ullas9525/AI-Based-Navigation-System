@@ -2,7 +2,11 @@
 
 An indoor navigation system that converts building blueprints into interactive 3D walkthroughs using AI-powered image analysis, Dijkstra pathfinding, and Three.js visualization.
 
-## Quick Start
+**Live demo:** [https://ai-based-navigation-system.vercel.app](https://ai-based-navigation-system.vercel.app)
+
+---
+
+## Quick Start (Local Development)
 
 ### Prerequisites
 
@@ -14,7 +18,7 @@ An indoor navigation system that converts building blueprints into interactive 3
 ```bash
 cd backend
 pip install -r requirements.txt
-python app.py
+python server.py
 ```
 
 The Flask server starts on `http://localhost:5000`.
@@ -33,6 +37,18 @@ The Vite dev server starts on `http://localhost:5173`.
 
 Navigate to `http://localhost:5173` to access the application.
 
+---
+
+## Deployed URLs
+
+| Service | URL |
+|---------|-----|
+| Frontend | [https://ai-based-navigation-system.vercel.app](https://ai-based-navigation-system.vercel.app) |
+| Backend API | [https://ai-based-navigation-system.onrender.com](https://ai-based-navigation-system.onrender.com) |
+| Health Check | [https://ai-based-navigation-system.onrender.com/health](https://ai-based-navigation-system.onrender.com/health) |
+
+---
+
 ## Features
 
 - **AI Blueprint Analysis** — Upload a floorplan image and Gemini 2.5 Flash extracts rooms, walkways, walls, doors, and navigation nodes automatically.
@@ -43,14 +59,19 @@ Navigate to `http://localhost:5173` to access the application.
 - **360° Media** — Upload panoramic photos and videos associated with specific navigation nodes.
 - **Geo-Fencing** — 2000m Haversine proximity check restricts navigation access to visitors within range of the building.
 
+---
+
 ## Architecture
 
 ```
 backend/                  # Flask REST API (Python)
-├── app.py                # Application entry point (port 5000)
+├── server.py             # Entry point (dev)
+├── wsgi.py               # Gunicorn entry point (production)
+├── Procfile              # Render deployment config
 ├── requirements.txt      # Python dependencies
 ├── app/
-│   ├── database.py       # SQLite schema and connection
+│   ├── __init__.py       # App factory (create_app)
+│   ├── database.py       # SQLite / PostgreSQL dual driver
 │   ├── api/
 │   │   ├── auth.py       # POST /api/auth/login (mock authentication)
 │   │   ├── blueprints.py # Blueprint upload + Gemini analysis
@@ -64,6 +85,7 @@ backend/                  # Flask REST API (Python)
 
 frontend/                 # React SPA (Vite)
 ├── package.json          # npm dependencies
+├── vercel.json           # Vercel SPA rewrites
 ├── src/
 │   ├── main.jsx          # Entry point
 │   ├── App.jsx           # Router configuration
@@ -71,6 +93,8 @@ frontend/                 # React SPA (Vite)
 │   └── components/
 │       └── ui/           # Map3D.jsx, PanoramaViewer.jsx
 ```
+
+---
 
 ## Frontend Routes
 
@@ -84,9 +108,11 @@ frontend/                 # React SPA (Vite)
 | `/visitor/scan` | Visitor Selection |
 | `/visitor/navigate/:buildingId` | Indoor Navigation (3D) |
 
+---
+
 ## API Endpoints
 
-All endpoints run on `http://localhost:5000`.
+All endpoints run on `https://ai-based-navigation-system.onrender.com` (or `http://localhost:5000` locally).
 
 | Method | Path | Purpose |
 |--------|------|---------|
@@ -98,11 +124,13 @@ All endpoints run on `http://localhost:5000`.
 | POST | `/api/navigation/route` | Dijkstra shortest path routing |
 | POST | `/api/media/node/<id>/<key>` | Upload 360° media for a node |
 
+---
+
 ## Usage Examples
 
 ### Upload a Blueprint
 
-1. Navigate to `http://localhost:5173/admin/login` and sign in with credentials `admin@navsystem.com` / `admin`.
+1. Navigate to `/admin/login` and sign in with credentials `admin@navsystem.com` / `admin`.
 2. Go to **Blueprint Upload** and submit a PNG or JPEG floorplan image.
 3. The system processes the image via Gemini 2.5 Flash and returns a building with extracted nodes, edges, and wall geometry.
 
@@ -115,7 +143,7 @@ All endpoints run on `http://localhost:5000`.
 ### Request a Custom Route (API)
 
 ```bash
-curl -X POST http://localhost:5000/api/navigation/route \
+curl -X POST https://ai-based-navigation-system.onrender.com/api/navigation/route \
   -H "Content-Type: application/json" \
   -d '{
     "building_id": 1,
@@ -124,18 +152,38 @@ curl -X POST http://localhost:5000/api/navigation/route \
   }'
 ```
 
-## Configuration
+---
 
-The backend requires a `GEMINI_API_KEY` environment variable in `backend/.env` to use the Gemini 2.5 Flash blueprint analysis. Without it, the system falls back to mock data.
+## Environment Variables
 
-```
-GEMINI_API_KEY=your_gemini_api_key_here
-```
+### Backend
+
+| Variable | Description |
+|----------|-------------|
+| `GEMINI_API_KEY` | Google Gemini API key (required for AI analysis) |
+| `DATABASE_URL` | PostgreSQL connection string (optional, uses SQLite otherwise) |
+| `CORS_ORIGINS` | Comma-separated allowed origins (e.g. `https://your-app.vercel.app`) |
+| `FRONTEND_URL` | Frontend URL for QR code generation and CORS |
+
+### Frontend
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_API_URL` | Backend API base URL (e.g. `https://your-app.onrender.com`) |
+
+---
+
+## CI/CD
+
+[![CI](https://github.com/ullas9525/AI-Based-Navigation-System/actions/workflows/ci.yml/badge.svg)](https://github.com/ullas9525/AI-Based-Navigation-System/actions/workflows/ci.yml)
+
+- **GitHub Actions** — Runs ruff (Python lint) + ESLint + Vite build on every push/PR
+- **Render** — Auto-deploys backend from `main` branch
+- **Vercel** — Auto-deploys frontend from `main` branch
+- **UptimeRobot** — Pings `/health` every 5 minutes to prevent cold starts
+
+---
 
 ## License
 
 This project is private and not currently licensed for public distribution.
-
-## Contributing
-
-See [AGENTS.md](AGENTS.md) for project conventions, codebase structure, and development notes.
