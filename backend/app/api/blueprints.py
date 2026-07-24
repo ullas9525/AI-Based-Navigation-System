@@ -70,14 +70,10 @@ def upload_blueprint():
     nodes, edges, walls = process_blueprint(filepath)
 
     conn = get_db_connection()
-    cursor = conn.cursor()
 
-    # Insert building record
-    cursor.execute(
-        'INSERT INTO buildings (name, blueprint_path, latitude, longitude) VALUES (?, ?, ?, ?)',
-        (building_name, filepath, latitude, longitude)
-    )
-    building_id = cursor.lastrowid
+    conn.execute('INSERT INTO buildings (name, blueprint_path, latitude, longitude) VALUES (%s, %s, %s, %s) RETURNING id',
+        (building_name, filepath, latitude, longitude))
+    building_id = conn.lastrowid
 
     # --- Persist NODES ---
     from app.services.geo_transform import pixel_to_latlong
@@ -86,46 +82,23 @@ def upload_blueprint():
         node_y = int(node.get('y', 500))
         node_lat, node_lng = pixel_to_latlong(node_x, node_y, latitude, longitude)
         
-        cursor.execute(
-            '''INSERT INTO nodes (building_id, node_key, label, x_coord, y_coord, latitude, longitude, type)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-            (
-                building_id,
-                node.get('id', ''),
-                node.get('label', ''),
-                node_x,
-                node_y,
-                node_lat,
-                node_lng,
-                node.get('type', 'room')
-            )
+        conn.execute(
+            'INSERT INTO nodes (building_id, node_key, label, x_coord, y_coord, latitude, longitude, type) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)',
+            (building_id, node.get('id', ''), node.get('label', ''), node_x, node_y, node_lat, node_lng, node.get('type', 'room'))
         )
 
     # --- Persist EDGES ---
     for edge in edges:
-        cursor.execute(
-            '''INSERT INTO edges (building_id, from_node, to_node, weight)
-               VALUES (?, ?, ?, ?)''',
-            (
-                building_id,
-                edge.get('from', ''),
-                edge.get('to', ''),
-                float(edge.get('weight', 1.0))
-            )
+        conn.execute(
+            'INSERT INTO edges (building_id, from_node, to_node, weight) VALUES (%s, %s, %s, %s)',
+            (building_id, edge.get('from', ''), edge.get('to', ''), float(edge.get('weight', 1.0)))
         )
 
     # --- Persist WALLS ---
     for wall in walls:
-        cursor.execute(
-            '''INSERT INTO walls (building_id, x1, y1, x2, y2)
-               VALUES (?, ?, ?, ?, ?)''',
-            (
-                building_id,
-                int(wall.get('x1', 0)),
-                int(wall.get('y1', 0)),
-                int(wall.get('x2', 0)),
-                int(wall.get('y2', 0))
-            )
+        conn.execute(
+            'INSERT INTO walls (building_id, x1, y1, x2, y2) VALUES (%s, %s, %s, %s, %s)',
+            (building_id, int(wall.get('x1', 0)), int(wall.get('y1', 0)), int(wall.get('x2', 0)), int(wall.get('y2', 0)))
         )
 
     # Generate QR with dynamic startNode param
@@ -133,13 +106,14 @@ def upload_blueprint():
     start_node_key = entrance_node.get('id', 'entrance') if entrance_node else 'entrance'
 
     qr_path = generate_qr(building_name, str(building_id), start_node_key)
-    cursor.execute('UPDATE buildings SET qr_path = ? WHERE id = ?', (qr_path, building_id))
+    conn.execute('UPDATE buildings SET qr_path = %s WHERE id = %s', (qr_path, building_id))
 
     conn.commit()
     conn.close()
 
     blueprint_url = f"/uploads/{os.path.basename(filepath)}"
-    qr_destination_url = f"http://localhost:5173/visitor/navigate/{building_id}?startNode={start_node_key}"
+    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+    qr_destination_url = f"{frontend_url}/visitor/navigate/{building_id}?startNode={start_node_key}"
 
     return jsonify({
         "message":            "Blueprint uploaded and analyzed successfully",
@@ -162,7 +136,7 @@ def upload_blueprint():
 def get_building(building_id):
     conn = get_db_connection()
     building = conn.execute(
-        'SELECT * FROM buildings WHERE id = ?', (building_id,)
+        'SELECT * FROM buildings WHERE id = %s', (building_id,)
     ).fetchone()
 
     if building is None:
@@ -171,13 +145,13 @@ def get_building(building_id):
 
     # Fetch nodes for the frontend node-selector dropdown
     nodes_rows = conn.execute(
-        'SELECT node_key, label, x_coord, y_coord, type, media_path, media_type FROM nodes WHERE building_id = ?',
+        'SELECT node_key, label, x_coord, y_coord, type, media_path, media_type FROM nodes WHERE building_id = %s',
         (building_id,)
     ).fetchall()
 
     # Fetch walls for 3D map generation
     walls_rows = conn.execute(
-        'SELECT x1, y1, x2, y2 FROM walls WHERE building_id = ?',
+        'SELECT x1, y1, x2, y2 FROM walls WHERE building_id = %s',
         (building_id,)
     ).fetchall()
     conn.close()

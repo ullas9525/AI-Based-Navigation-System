@@ -39,18 +39,17 @@ def upload_node_media(building_id, node_key):
 
         # Update database
         conn = get_db_connection()
-        cursor = conn.cursor()
         
         # Check if node exists
-        node = cursor.execute('SELECT id FROM nodes WHERE building_id = ? AND node_key = ?', (building_id, node_key)).fetchone()
+        node = conn.execute('SELECT id FROM nodes WHERE building_id = %s AND node_key = %s', (building_id, node_key)).fetchone()
         if not node:
             conn.close()
             # Clean up the file if node doesn't exist
             os.remove(filepath)
             return jsonify({"error": "Node not found for this building"}), 404
             
-        cursor.execute(
-            'UPDATE nodes SET media_path = ?, media_type = ? WHERE building_id = ? AND node_key = ?',
+        conn.execute(
+            'UPDATE nodes SET media_path = %s, media_type = %s WHERE building_id = %s AND node_key = %s',
             (media_url, media_type, building_id, node_key)
         )
         conn.commit()

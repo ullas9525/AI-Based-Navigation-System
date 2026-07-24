@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import Sidebar from '../components/layout/Sidebar';
 import Topbar from '../components/layout/Topbar';
 import axios from 'axios';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173';
 
 const QrCodeGeneration = () => {
   const [selectedLocation, setSelectedLocation] = useState('Main Lobby Entrance');
@@ -9,7 +11,7 @@ const QrCodeGeneration = () => {
   const [includeScanMe, setIncludeScanMe] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('https://lh3.googleusercontent.com/aida-public/AB6AXuDfLgX6Q3BngyD2M37cIhhOi-fAz8HryvAVmwPO1YuYo4SQZzrs8GiQ_c2B_CIKlwG2776Ir4x43Jruct79Qq1O2PIHhVnuHtl4bHPghu8yJ5bHUTIwjmiywG18qQlcunewtVdjb7MfJx27odgmZNCtPmBmP1XM11_UTYK8zI5yzB6AiFOJnRdPfcA8RKrxr-FB2VUa0Y4jN5Pi4z_PdxTzMoQCRGHSNy7ykRbMfbA1HfHTCONH6JEDKcAxw17gNVqyWlUBGkBrirwN'); // Default placeholder
-  const [qrDestinationUrl, setQrDestinationUrl] = useState('http://localhost:5173/visitor/navigate/1?loc=Main%20Lobby%20Entrance');
+  const [qrDestinationUrl, setQrDestinationUrl] = useState(`${FRONTEND_URL}/visitor/navigate/1?loc=Main%20Lobby%20Entrance`);
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -18,7 +20,7 @@ const QrCodeGeneration = () => {
     await new Promise(r => setTimeout(r, 600));
 
     try {
-      const response = await axios.post('http://localhost:5000/api/navigation/qr/generate', {
+      const response = await axios.post(`${API_URL}/api/navigation/qr/generate`, {
         node_id: selectedLocation
       });
       // Assuming backend sends back a base64 Data URL or direct Image URL
@@ -32,7 +34,7 @@ const QrCodeGeneration = () => {
     } catch (err) {
       console.error("Error generating QR", err);
       // Fallback pseudo-generation for prototype feel
-      const fallbackUrl = `http://localhost:5173/visitor/navigate/1?loc=${encodeURIComponent(selectedLocation)}`;
+      const fallbackUrl = `${FRONTEND_URL}/visitor/navigate/1?loc=${encodeURIComponent(selectedLocation)}`;
       setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(fallbackUrl)}`);
       setQrDestinationUrl(fallbackUrl);
     } finally {

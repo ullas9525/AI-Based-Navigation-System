@@ -9,7 +9,8 @@ from app.api.media import media_bp
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+    allowed_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:5173,http://localhost:3000')
+    CORS(app, origins=allowed_origins.split(','))
     
     # Configuration
     app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')

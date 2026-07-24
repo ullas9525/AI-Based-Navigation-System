@@ -3,6 +3,8 @@ import { useThree } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
+const MEDIA_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const PanoramaViewer = ({ mediaPath, mediaType }) => {
   if (mediaType === 'video') {
     return <VideoPanorama mediaPath={mediaPath} />;
@@ -11,7 +13,7 @@ export const PanoramaViewer = ({ mediaPath, mediaType }) => {
 };
 
 const ImagePanorama = ({ mediaPath }) => {
-  const texture = useTexture(`http://localhost:5000${mediaPath}`);
+  const texture = useTexture(`${MEDIA_BASE_URL}${mediaPath}`);
   
   useEffect(() => {
     if (texture) {
@@ -31,7 +33,7 @@ const ImagePanorama = ({ mediaPath }) => {
 const VideoPanorama = ({ mediaPath }) => {
   const [video] = useState(() => {
     const vid = document.createElement('video');
-    vid.src = `http://localhost:5000${mediaPath}`;
+    vid.src = `${MEDIA_BASE_URL}${mediaPath}`;
     vid.crossOrigin = 'Anonymous';
     vid.loop = true;
     vid.muted = true;

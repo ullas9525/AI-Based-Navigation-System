@@ -1,4 +1,3 @@
-<!-- generated-by: gsd-doc-writer -->
 # AI Based Navigation System
 
 An indoor navigation system that converts building blueprints into interactive 3D walkthroughs using AI-powered image analysis, Dijkstra pathfinding, and Three.js visualization.

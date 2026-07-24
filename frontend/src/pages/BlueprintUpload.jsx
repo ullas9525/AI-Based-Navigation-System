@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import Sidebar from '../components/layout/Sidebar';
 import Topbar from '../components/layout/Topbar';
 import axios from 'axios';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const BlueprintUpload = () => {
   const [file, setFile] = useState(null);
@@ -38,7 +39,7 @@ const BlueprintUpload = () => {
     formData.append('mapLink', mapLink);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/blueprints/upload', formData, {
+      const response = await axios.post(`${API_URL}/api/blueprints/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -188,7 +189,7 @@ const BlueprintUpload = () => {
                                       const formData = new FormData();
                                       formData.append('file', file);
                                       try {
-                                        await axios.post(`http://localhost:5000/api/media/node/${processStatus.building_id}/${node.id}`, formData);
+                                        await axios.post(`${API_URL}/api/media/node/${processStatus.building_id}/${node.id}`, formData);
                                         alert(`Successfully uploaded media for ${node.label}`);
                                       } catch (err) {
                                         alert(`Failed to upload media: ${err.response?.data?.error || err.message}`);
@@ -221,12 +222,12 @@ const BlueprintUpload = () => {
                       {!processing && processStatus && processStatus.qr_code_url && (
                         <div className="flex flex-col items-center gap-4 p-4 h-full w-full justify-center">
                           <img
-                            src={`http://localhost:5000${processStatus.qr_code_url}`}
+                            src={`${API_URL}${processStatus.qr_code_url}`}
                             alt="Navigation QR Code"
                             className="bg-white p-2 rounded-xl shadow-sm border border-slate-200 w-full max-w-[200px] h-auto object-contain"
                           />
                           <a
-                            href={`http://localhost:5000${processStatus.qr_code_url}`}
+                            href={`${API_URL}${processStatus.qr_code_url}`}
                             download={`Navigation_QR_${processStatus.building.replace(/\s+/g, '_')}.png`}
                             target="_blank"
                             rel="noreferrer"

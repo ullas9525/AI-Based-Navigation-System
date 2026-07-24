@@ -9,7 +9,8 @@ def generate_qr(building_name, building_id, start_node_key="entrance"):
     Saves the QR image to the uploads folder.
     """
     # URL visitors hit when they scan the QR code.
-    url = f"http://localhost:5173/visitor/navigate/{building_id}?startNode={start_node_key}"
+    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+    url = f"{frontend_url}/visitor/navigate/{building_id}?startNode={start_node_key}"
 
     qr = qrcode.QRCode(
         version=1,

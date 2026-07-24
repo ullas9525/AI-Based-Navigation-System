@@ -13,7 +13,7 @@ navigation_bp = Blueprint('navigation', __name__)
 def get_nodes(building_id):
     conn = get_db_connection()
     rows = conn.execute(
-        'SELECT node_key, label, x_coord, y_coord, latitude, longitude, type, media_path, media_type FROM nodes WHERE building_id = ?',
+        'SELECT node_key, label, x_coord, y_coord, latitude, longitude, type, media_path, media_type FROM nodes WHERE building_id = %s',
         (building_id,)
     ).fetchall()
     conn.close()
@@ -97,17 +97,17 @@ def calculate_route():
     conn = get_db_connection()
 
     node_rows = conn.execute(
-        'SELECT node_key, label, x_coord, y_coord, latitude, longitude, type, media_path, media_type FROM nodes WHERE building_id = ?',
+        'SELECT node_key, label, x_coord, y_coord, latitude, longitude, type, media_path, media_type FROM nodes WHERE building_id = %s',
         (building_id,)
     ).fetchall()
 
     edge_rows = conn.execute(
-        'SELECT from_node, to_node, weight FROM edges WHERE building_id = ?',
+        'SELECT from_node, to_node, weight FROM edges WHERE building_id = %s',
         (building_id,)
     ).fetchall()
 
     wall_rows = conn.execute(
-        'SELECT x1, y1, x2, y2 FROM walls WHERE building_id = ?',
+        'SELECT x1, y1, x2, y2 FROM walls WHERE building_id = %s',
         (building_id,)
     ).fetchall()
 
