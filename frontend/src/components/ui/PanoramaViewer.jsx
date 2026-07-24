@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useThree } from '@react-three/fiber';
+import React, { useState } from 'react';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -14,18 +13,15 @@ export const PanoramaViewer = ({ mediaPath, mediaType }) => {
 
 const ImagePanorama = ({ mediaPath }) => {
   const texture = useTexture(`${MEDIA_BASE_URL}${mediaPath}`);
-  
-  useEffect(() => {
-    if (texture) {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.needsUpdate = true;
-    }
-  }, [texture]);
+
+  const tex = texture.clone();
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
 
   return (
     <mesh scale={[-1, 1, 1]}>
       <sphereGeometry args={[500, 60, 40]} />
-      <meshBasicMaterial map={texture} side={THREE.DoubleSide} />
+      <meshBasicMaterial map={tex} side={THREE.DoubleSide} />
     </mesh>
   );
 };

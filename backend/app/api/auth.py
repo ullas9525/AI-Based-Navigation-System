@@ -7,7 +7,7 @@ def login():
     data = request.json
     email = data.get('email')
     password = data.get('password')
-    
+
     # Mock authentication
     if email == 'admin@navsystem.com' and password == 'admin':
         return jsonify({
@@ -18,5 +18,5 @@ def login():
                 "email": email
             }
         }), 200
-        
+
     return jsonify({"success": False, "message": "Invalid credentials"}), 401

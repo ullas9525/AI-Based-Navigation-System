@@ -99,7 +99,7 @@ def process_blueprint(filepath):
         for node in nodes_raw:
             node['x'] = int(float(node.get('x', 50)) * 10)
             node['y'] = int(float(node.get('y', 50)) * 10)
-            
+
         for wall in walls_raw:
             wall['x1'] = int(float(wall.get('x1', 0)) * 10)
             wall['y1'] = int(float(wall.get('y1', 0)) * 10)
@@ -202,7 +202,7 @@ def validate_blueprint(filepath, lat, lng):
     and aligns with the geographic context.
     """
     api_key = os.environ.get("GEMINI_API_KEY", "")
-    
+
     if not api_key:
         print("\n[WARNING] GEMINI_API_KEY environment variable not set. Skipping validation.")
         return True, "Mock validation successful"
@@ -219,13 +219,13 @@ def validate_blueprint(filepath, lat, lng):
 
         prompt = f"""
         Analyze this image. Is it a valid architectural floor plan or blueprint?
-        Additionally, considering the GPS coordinates (Latitude: {lat}, Longitude: {lng}), 
+        Additionally, considering the GPS coordinates (Latitude: {lat}, Longitude: {lng}),
         does this image plausibly represent an indoor structure suitable for these coordinates?
-        
+
         Strictly output valid JSON with two fields:
         - 'is_valid': boolean (true if it's a valid blueprint, false otherwise)
         - 'reason': A short explanation string.
-        
+
         Example:
         {{"is_valid": true, "reason": "The image is a valid floor plan showing rooms and corridors."}}
         """

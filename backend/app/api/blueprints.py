@@ -83,7 +83,7 @@ def upload_blueprint():
         node_x = int(node.get('x', 500))
         node_y = int(node.get('y', 500))
         node_lat, node_lng = pixel_to_latlong(node_x, node_y, latitude, longitude)
-        
+
         conn.execute(
             'INSERT INTO nodes (building_id, node_key, label, x_coord, y_coord, latitude, longitude, type) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)',
             (building_id, node.get('id', ''), node.get('label', ''), node_x, node_y, node_lat, node_lng, node.get('type', 'room'))

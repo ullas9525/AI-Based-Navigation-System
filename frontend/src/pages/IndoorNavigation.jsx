@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Canvas } from '@react-three/fiber';
@@ -22,13 +22,11 @@ const IndoorNavigation = () => {
   const [pathData, setPathData]           = useState(null);
   const [loading, setLoading]             = useState(false);
   const [currentFloor, setCurrentFloor]   = useState('1');
-  const [blueprintUrl, setBlueprintUrl]   = useState(null);
 
   const [checkingLocation, setCheckingLocation] = useState(true);
   const [locationError, setLocationError]       = useState(null);
-  const [buildingName, setBuildingName]         = useState('');
   const [walls, setWalls]                       = useState([]);
-  
+
   const [viewMode, setViewMode]                 = useState('3d'); // '3d' or 'panorama'
   const [selectedNode, setSelectedNode]         = useState(null);
 
@@ -62,14 +60,8 @@ const IndoorNavigation = () => {
         const res = await axios.get(`${BASE_URL}/api/blueprints/${buildingId || 1}`);
         const building = res.data;
 
-        setBuildingName(building.name || '');
         setNodes(building.nodes || []);
         setWalls(building.walls || []);
-
-        // Set blueprint image URL (served from Flask /uploads/<filename>)
-        if (building.blueprint_url) {
-          setBlueprintUrl(`${BASE_URL}${building.blueprint_url}`);
-        }
 
         // Validate or fallback the start location
         let currentStart = startLoc;
@@ -125,6 +117,7 @@ const IndoorNavigation = () => {
     };
 
     verifyAndLoad();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildingId]);
 
   // -------------------------------------------------------------------------
@@ -151,16 +144,8 @@ const IndoorNavigation = () => {
     if (startLoc && endLoc) {
       fetchRoute();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startLoc, endLoc]);
-
-  // -------------------------------------------------------------------------
-  // Build SVG polyline points string from path coordinate data
-  // The SVG uses viewBox="0 0 1000 1000" which matches our coordinate space
-  // -------------------------------------------------------------------------
-  const buildPolylinePoints = (path) => {
-    if (!path || path.length === 0) return '';
-    return path.map(p => `${p.x},${p.y}`).join(' ');
-  };
 
   const pathCoords  = pathData?.path || [];
   
@@ -171,8 +156,6 @@ const IndoorNavigation = () => {
       startPoint = { x: node.x, y: node.y };
     }
   }
-
-  const endPoint = pathCoords[pathCoords.length - 1] || null;
 
   // -------------------------------------------------------------------------
   // Loading / error screens (preserved original markup exactly)

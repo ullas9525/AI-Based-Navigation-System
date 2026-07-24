@@ -29,7 +29,7 @@ def upload_node_media(building_id, node_key):
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         uploads_dir = os.path.join(base_dir, 'uploads', 'media')
         os.makedirs(uploads_dir, exist_ok=True)
-        
+
         # Save file with unique name
         save_name = f"building_{building_id}_node_{node_key}.{ext}"
         filepath = os.path.join(uploads_dir, save_name)
@@ -39,7 +39,7 @@ def upload_node_media(building_id, node_key):
 
         # Update database
         conn = get_db_connection()
-        
+
         # Check if node exists
         node = conn.execute('SELECT id FROM nodes WHERE building_id = %s AND node_key = %s', (building_id, node_key)).fetchone()
         if not node:
@@ -47,7 +47,7 @@ def upload_node_media(building_id, node_key):
             # Clean up the file if node doesn't exist
             os.remove(filepath)
             return jsonify({"error": "Node not found for this building"}), 404
-            
+
         conn.execute(
             'UPDATE nodes SET media_path = %s, media_type = %s WHERE building_id = %s AND node_key = %s',
             (media_url, media_type, building_id, node_key)

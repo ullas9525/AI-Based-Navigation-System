@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const VisitorSelection = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = null; // Basic state for future search functionality
 
-  const handleDestinationClick = (destination) => {
-    // In a real app, this would pass destination coordinates/ID to the map
+  const handleDestinationClick = () => {
     navigate('/visitor/navigate/1');
   };
 

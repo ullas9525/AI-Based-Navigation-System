@@ -1,8 +1,6 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const Topbar = ({ title, description, showSearch = true, onActionClick, actionLabel, actionIcon }) => {
-  const navigate = useNavigate();
 
   return (
     <header className="flex items-center justify-between px-8 py-6 sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">

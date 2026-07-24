@@ -51,9 +51,11 @@ def get_nodes(building_id):
 def do_intersect(p1, q1, p2, q2):
     def orientation(p, q, r):
         val = (float(q['y']) - float(p['y'])) * (float(r['x']) - float(q['x'])) - (float(q['x']) - float(p['x'])) * (float(r['y']) - float(q['y']))
-        if val > 0: return 1
-        elif val < 0: return 2
-        else: return 0
+        if val > 0:
+            return 1
+        if val < 0:
+            return 2
+        return 0
 
     def on_segment(p, q, r):
         if (q['x'] <= max(p['x'], r['x']) and q['x'] >= min(p['x'], r['x']) and
@@ -66,11 +68,16 @@ def do_intersect(p1, q1, p2, q2):
     o3 = orientation(p2, q2, p1)
     o4 = orientation(p2, q2, q1)
 
-    if o1 != o2 and o3 != o4: return True
-    if o1 == 0 and on_segment(p1, p2, q1): return True
-    if o2 == 0 and on_segment(p1, q2, q1): return True
-    if o3 == 0 and on_segment(p2, p1, q2): return True
-    if o4 == 0 and on_segment(p2, q1, q2): return True
+    if o1 != o2 and o3 != o4:
+        return True
+    if o1 == 0 and on_segment(p1, p2, q1):
+        return True
+    if o2 == 0 and on_segment(p1, q2, q1):
+        return True
+    if o3 == 0 and on_segment(p2, p1, q2):
+        return True
+    if o4 == 0 and on_segment(p2, q1, q2):
+        return True
     return False
 
 def has_line_of_sight(p1, p2, walls):
@@ -147,15 +154,19 @@ def calculate_route():
         })
 
     def resolve_node(user_input):
-        if isinstance(user_input, dict): return None
-        if user_input in node_map: return user_input
+        if isinstance(user_input, dict):
+            return None
+        if user_input in node_map:
+            return user_input
         return label_to_key.get(user_input.lower())
 
     start_key = "custom_start" if isinstance(start_input, dict) else resolve_node(start_input)
     end_key = "custom_end" if isinstance(end_input, dict) else resolve_node(end_input)
 
-    if not start_key: return jsonify({"error": f"Start node '{start_input}' not found"}), 404
-    if not end_key: return jsonify({"error": f"End node '{end_input}' not found"}), 404
+    if not start_key:
+        return jsonify({"error": f"Start node '{start_input}' not found"}), 404
+    if not end_key:
+        return jsonify({"error": f"End node '{end_input}' not found"}), 404
 
     # Inject custom start
     if isinstance(start_input, dict):
