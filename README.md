@@ -162,14 +162,14 @@ curl -X POST https://ai-based-navigation-system.onrender.com/api/navigation/rout
 |----------|-------------|
 | `GEMINI_API_KEY` | Google Gemini API key (required for AI analysis) |
 | `DATABASE_URL` | PostgreSQL connection string (optional, uses SQLite otherwise) |
-| `CORS_ORIGINS` | Comma-separated allowed origins (e.g. `https://your-app.vercel.app`) |
+| `CORS_ORIGINS` | Comma-separated allowed origins  |
 | `FRONTEND_URL` | Frontend URL for QR code generation and CORS |
 
 ### Frontend
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_API_URL` | Backend API base URL (e.g. `https://your-app.onrender.com`) |
+| `VITE_API_URL` | Backend API base URL |
 
 ---
 
